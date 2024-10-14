@@ -6,52 +6,48 @@ namespace Plugin
     internal class Configuration
     {
         #region 实例变量
-        [JsonProperty("插件开关", Order = -8)]
+        [JsonProperty("插件开关", Order = 1)]
         public bool Enabled { get; set; } = true;
 
-        [JsonProperty("领取条件/百分比", Order = -8)]
-        public double Damages { get; set; } = 0.3;
-
-        [JsonProperty("伤害统计播报", Order = -8)]
+        [JsonProperty("伤害统计播报", Order = 2)]
         public bool Broadcast { get; set; } = true;
 
-        [JsonProperty("物品ID", Order = -2)]
-        public int[] ItemID { get; set; } = new int[] { 3318,3319,3320,3321,3322,3323,3324,3325,3326,3327,3328,3329,3330,3331,3332,3860,4782,4957,5111};
+        [JsonProperty("领取条件/百分比", Order = 3)]
+        public double Damages { get; set; } = 0.15;
 
-        [JsonProperty("玩家数据表", Order = 4)]
+        [JsonProperty("玩家输出表", Order = 4)]
+        [JsonConverter(typeof(DataConverter))]
         public List<ItemData> Items { get; set; } = new List<ItemData>();
-        #endregion
-
-        #region 预设参数方法
-        public void Ints()
-        {
-            Items = new List<ItemData>
-            {
-                new ItemData("羽学",true,0,0)
-            };
-        }
         #endregion
 
         #region 数据结构
         public class ItemData
         {
-            [JsonProperty("玩家名字", Order = 1)]
             public string Name { get; set; }
-            [JsonProperty("领取条件", Order = 2)]
-            public bool Enabled { get; set; }
-            [JsonProperty("伤害值", Order = 3)]
             public double Damage { get; set; }
-            [JsonProperty("伤害百分比", Order = 4)]
-            public double Damage2 { get; set; }
-
-            public ItemData(string name = "", bool enabled = false, double damage = 0, double damage2 = 0)
+            public ItemData(string name = "", double damage = 0)
             {
                 Name = name ?? "";
-                Enabled = enabled;
                 Damage = damage;
-                Damage2 = damage2;  
             }
         }
+        #endregion
+
+        #region 键值转换器
+        public class DataConverter : JsonConverter<List<ItemData>>
+        {
+            public override void WriteJson(JsonWriter writer, List<ItemData> value, JsonSerializer serializer)
+            {
+                var StageDict = value.ToDictionary(item => item.Name, item => item.Damage);
+                serializer.Serialize(writer, StageDict);
+            }
+
+            public override List<ItemData> ReadJson(JsonReader reader, Type objectType, List<ItemData> existingValue, bool hasExistingValue, JsonSerializer serializer)
+            {
+                var LevelDict = serializer.Deserialize<Dictionary<string, double>>(reader);
+                return LevelDict?.Select(kv => new ItemData(kv.Key, kv.Value)).ToList() ?? new List<ItemData>();
+            }
+        } 
         #endregion
 
         #region 读取与创建配置文件方法
@@ -78,8 +74,6 @@ namespace Plugin
             }
         }
         #endregion
-
-
 
     }
 }

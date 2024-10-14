@@ -1,6 +1,5 @@
 ﻿using System.Text;
 using Terraria;
-using Terraria.ID;
 using TerrariaApi.Server;
 using TShockAPI;
 using TShockAPI.Hooks;
@@ -13,10 +12,10 @@ namespace Plugin
     public class DamageRuleLoot : TerrariaPlugin
     {
 
-        #region 插件模版信息
+        #region 插件信息
         public override string Name => "伤害规则掉落";
         public override string Author => "羽学";
-        public override Version Version => new Version(1, 0, 0);
+        public override Version Version => new Version(1, 1, 0);
         public override string Description => "涡轮增压不蒸鸭";
         #endregion
 
@@ -70,16 +69,12 @@ namespace Plugin
                 Config.Items.Add(new Configuration.ItemData()
                 {
                     Name = plr.Name,
-                    Enabled = false,
                     Damage = 0,
-                    Damage2 = 0
                 });
             }
             else
             {
-                list!.Enabled = false;
-                list.Damage = 0;
-                list.Damage2 = 0;
+                list!.Damage = 0;
             }
             Config.Write();
         }
@@ -91,6 +86,7 @@ namespace Plugin
         {
             if (!Config.Enabled) return;
             var npc = Main.npc[args.NpcId];
+
             if (npc.boss)
             {
                 this.DamageList.Add(npc, new Dictionary<string, double>());
@@ -99,6 +95,7 @@ namespace Plugin
         private void OnStrike(NpcStrikeEventArgs args)
         {
             if (!Config.Enabled) return;
+
             if (this.DamageList.ContainsKey(args.Npc))
             {
                 if (!this.DamageList[args.Npc].ContainsKey(args.Player.name))
@@ -108,6 +105,7 @@ namespace Plugin
                 this.DamageList[args.Npc][args.Player.name] += args.Damage;
             }
         }
+
         private void OnNpcKill(NpcKilledEventArgs args)
         {
             if (!Config.Enabled) return;
@@ -128,24 +126,24 @@ namespace Plugin
                 {
                     var Damage = data.FirstOrDefault(p => p.Key == plr.Name);
                     var item = Config.Items.FirstOrDefault(x => x.Name == plr.Name);
+
                     if (item != null)
                     {
-                        item.Damage = Damage.Value;
-                        item.Damage2 = Damage.Value / npcLifeMax;
-                        item.Enabled = item.Damage2 >= Config.Damages;
+                        item.Damage = Damage.Value / npcLifeMax;
                         Config.Write();
-                    }
 
-                    if (item != null && item.Damage2 < Config.Damages)
-                    {
                         for (int i = 0; i < Terraria.Main.maxItems; i++)
                         {
                             var item2 = Terraria.Main.item[i];
 
-                            if (Config.ItemID.Contains(item2.netID))
+                            if (Main.timeItemSlotCannotBeReusedFor[i] == 54000)
                             {
-                                Terraria.Main.item[i].active = false;
-                                plr.SendData(PacketTypes.ItemDrop, "", i);
+                                if (item.Damage < Config.Damages)
+                                {
+                                    Terraria.Main.item[i].active = false;
+                                    plr.SendData(PacketTypes.ItemDrop, "", i);
+
+                                }
                             }
                         }
                     }
