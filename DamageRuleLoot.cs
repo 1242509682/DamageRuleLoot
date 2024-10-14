@@ -89,6 +89,18 @@ namespace Plugin
 
             if (npc.boss)
             {
+                foreach (var plr in TShock.Players.Where(plr => plr != null && plr.Active && plr.IsLoggedIn))
+                {
+                    var item = Config.Items.FirstOrDefault(x => x.Name == plr?.Name);
+                    if (item != null)
+                    {
+                        if (item.Damage > 0)
+                        {
+                            item.Damage = 0; 
+                            Config.Write();
+                        }
+                    }
+                }
                 this.DamageList.Add(npc, new Dictionary<string, double>());
             }
         }
@@ -142,7 +154,6 @@ namespace Plugin
                                 {
                                     Terraria.Main.item[i].active = false;
                                     plr.SendData(PacketTypes.ItemDrop, "", i);
-
                                 }
                             }
                         }
