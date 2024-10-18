@@ -14,7 +14,7 @@ public class DamageRuleLoot : TerrariaPlugin
     #region 插件信息
     public override string Name => "伤害规则掉落";
     public override string Author => "羽学 西江小子";
-    public override Version Version => new Version(1, 2, 2);
+    public override Version Version => new Version(1, 2, 3);
     public override string Description => "涡轮增压不蒸鸭";
     #endregion
 
@@ -70,11 +70,13 @@ public class DamageRuleLoot : TerrariaPlugin
                         strike.PlayerOrDamage[plr.name] += Damage;
                         strike.AllDamage += Damage;
 
-                        #if DEBUG
-                        TShock.Utils.Broadcast($"[c/FBF069:【暴击】] 玩家:[c/F06576:{plr.name}] " +
-                            $"对象:[c/AEA3E4:{self.FullName}] 满血:[c/FBF069:{self.lifeMax}] " +
-                            $"血量:[c/6DDA6D:{self.life}] 伤害:[c/F06576:{strike.AllDamage}] 暴击数:[c/FBF069:{CritTracker.GetCritCount(plr.name)}]", 202, 221, 222);
-                        #endif
+                        if (Config.Enabled4)
+                        {
+                            TShock.Utils.Broadcast($"[c/FBF069:【暴击】] 玩家:[c/F06576:{plr.name}] " +
+                                $"对象:[c/AEA3E4:{self.FullName}] 满血:[c/FBF069:{self.lifeMax}] " +
+                                $"血量:[c/6DDA6D:{self.life}] 伤害:[c/F06576:{strike.AllDamage}] " +
+                                $"暴击数:[c/FBF069:{CritTracker.GetCritCount(plr.name)}]", 202, 221, 222);
+                        }
 
                         CritTracker.UpdateCritCount(plr.name);
                     }
@@ -280,6 +282,57 @@ public class DamageRuleLoot : TerrariaPlugin
                                 }
                                 SendKillMessage(airship.npcName, airship.PlayerOrDamage, airship.AllDamage);
                                 strikeNPC.RemoveAll(x => x.npcID == 491 || x.npcID == 492 || x.npcID != Main.npc[x.npcIndex].netID || !Main.npc[x.npcIndex].active);
+                                return;
+                            }
+                        }
+                        break;
+
+                    //火星飞碟的处理，特殊点：本体在炮塔死亡后计入击杀
+                    case 392:
+                    case 393:
+                    case 394:
+                    case 395:
+                        {
+                            StrikeNPC? strike2 = strikeNPC.Find(x => x.npcID == 395);
+                            if (strike2 == null)
+                            {
+                                int index = -1;
+                                foreach (var n in Main.npc)
+                                {
+                                    if (n.netID == 395)
+                                    {
+                                        index = n.whoAmI;
+                                    }
+                                }
+                                if (index == -1)
+                                {
+                                    strikeNPC.RemoveAll(x => x.npcID == 392 || x.npcID == 393 || x.npcID == 394 || x.npcID == 395 || x.npcID != Main.npc[x.npcIndex].netID || !Main.npc[x.npcIndex].active);
+                                    return;
+                                }
+                                strike2 = new StrikeNPC(index, 395, Main.npc[index].FullName, strikeNPC[i].PlayerOrDamage, strikeNPC[i].AllDamage, 81000);
+                                strikeNPC.Add(strike2);
+                            }
+                            //把炮塔受伤计算加入到本体核心中
+                            else if (strikeNPC[i].npcID != 395)
+                            {
+                                foreach (var v in strikeNPC[i].PlayerOrDamage)
+                                {
+                                    if (strike2.PlayerOrDamage.ContainsKey(v.Key))
+                                    {
+                                        strike2.PlayerOrDamage[v.Key] += v.Value;
+                                        strike2.AllDamage += v.Value;
+                                    }
+                                    else
+                                    {
+                                        strike2.PlayerOrDamage.Add(v.Key, v.Value);
+                                        strike2.AllDamage += v.Value;
+                                    }
+                                }
+                            }
+                            if (strikeNPC[i].npcID == 395)
+                            {
+                                SendKillMessage("火星飞碟", strikeNPC[i].PlayerOrDamage, strikeNPC[i].AllDamage);
+                                strikeNPC.RemoveAll(x => x.npcID == 392 || x.npcID == 393 || x.npcID == 394 || x.npcID == 395 || x.npcID != Main.npc[x.npcIndex].netID || !Main.npc[x.npcIndex].active);
                                 return;
                             }
                         }

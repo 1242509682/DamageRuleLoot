@@ -1,6 +1,5 @@
 ﻿using System.Text;
 using TShockAPI;
-using static MonoMod.InlineRT.MonoModRule;
 
 namespace DamageRuleLoot;
 
@@ -48,20 +47,6 @@ public static class Tool
         else
         {
             dictionary.Add(key, value);
-        }
-    }
-
-    public static void UpdateDict2(Dictionary<string, double> dictionary, string key, double value, double AllDamage)
-    {
-        if (dictionary.ContainsKey(key))
-        {
-            dictionary[key] += value;
-            AllDamage += value;
-        }
-        else
-        {
-            dictionary.Add(key, value);
-            AllDamage += value;
         }
     }
     #endregion
