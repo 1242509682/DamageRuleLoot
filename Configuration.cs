@@ -1,79 +1,70 @@
 ﻿using Newtonsoft.Json;
 using TShockAPI;
 
-namespace Plugin
+namespace DamageRuleLoot;
+
+public class Configuration
 {
-    internal class Configuration
+    #region 实例变量
+    [JsonProperty("插件开关", Order = 0)]
+    public bool Enabled { get; set; } = true;
+
+    [JsonProperty("是否惩罚", Order = 1)]
+    public bool Enabled2 { get; set; } = true;
+
+    [JsonProperty("广告开关", Order = 2)]
+    public bool Enabled3 { get; set; } = true;
+
+    [JsonProperty("广告内容", Order = 2)]
+    public string Advertisement { get; set; } = $"[i:3456][C/F2F2C7:插件开发] [C/BFDFEA:by]  羽学 [C/E7A5CC:|] [c/00FFFF:西江小子][i:3459]";
+
+    [JsonProperty("伤害榜播报", Order = 3)]
+    public bool Broadcast { get; set; } = true;
+
+    [JsonProperty("惩罚榜播报", Order = 4)]
+    public bool Broadcast2 { get; set; } = true;
+
+    [JsonProperty("领取条件/百分比", Order = 5)]
+    public double Damages { get; set; }
+
+    [JsonProperty("参与伤害榜的非BOSS怪名称", Order = 6)]
+    public string[] Expand { get; set; } = new string[] { "冰雪巨人", "沙尘精", "腐化宝箱怪", "猩红宝箱怪", "神圣宝箱怪", "黑暗魔法师", "食人魔", "哥布林术士", "荷兰飞盗船", "恐惧鹦鹉螺", "血浆哥布林鲨鱼", "血鳗鱼", "海盗船长" };
+
+    public Configuration()
     {
-        #region 实例变量
-        [JsonProperty("插件开关", Order = 1)]
-        public bool Enabled { get; set; } = true;
+        #if DEBUG
+        Damages = 0.5; 
 
-        [JsonProperty("伤害统计播报", Order = 2)]
-        public bool Broadcast { get; set; } = true;
+        #else
+        Damages = 0.15;
 
-        [JsonProperty("领取条件/百分比", Order = 3)]
-        public double Damages { get; set; } = 0.15;
-
-        [JsonProperty("玩家输出表", Order = 4)]
-        [JsonConverter(typeof(DataConverter))]
-        public List<ItemData> Items { get; set; } = new List<ItemData>();
-        #endregion
-
-        #region 数据结构
-        public class ItemData
-        {
-            public string Name { get; set; }
-            public double Damage { get; set; }
-            public ItemData(string name = "", double damage = 0)
-            {
-                Name = name ?? "";
-                Damage = damage;
-            }
-        }
-        #endregion
-
-        #region 键值转换器
-        public class DataConverter : JsonConverter<List<ItemData>>
-        {
-            public override void WriteJson(JsonWriter writer, List<ItemData> value, JsonSerializer serializer)
-            {
-                var StageDict = value.ToDictionary(item => item.Name, item => item.Damage);
-                serializer.Serialize(writer, StageDict);
-            }
-
-            public override List<ItemData> ReadJson(JsonReader reader, Type objectType, List<ItemData> existingValue, bool hasExistingValue, JsonSerializer serializer)
-            {
-                var LevelDict = serializer.Deserialize<Dictionary<string, double>>(reader);
-                return LevelDict?.Select(kv => new ItemData(kv.Key, kv.Value)).ToList() ?? new List<ItemData>();
-            }
-        } 
-        #endregion
-
-        #region 读取与创建配置文件方法
-        public static readonly string FilePath = Path.Combine(TShock.SavePath, "伤害规则掉落.json");
-
-        public void Write()
-        {
-            string json = JsonConvert.SerializeObject(this, Formatting.Indented); 
-            File.WriteAllText(FilePath, json);
-        }
-
-        public static Configuration Read()
-        {
-            if (!File.Exists(FilePath))
-            {
-                var NewConfig = new Configuration();
-                new Configuration().Write();
-                return NewConfig;
-            }
-            else
-            {
-                string jsonContent = File.ReadAllText(FilePath);
-                return JsonConvert.DeserializeObject<Configuration>(jsonContent)!;
-            }
-        }
-        #endregion
-
+        #endif
     }
+
+    #endregion
+
+    #region 读取与创建配置文件方法
+    public static readonly string FilePath = Path.Combine(TShock.SavePath, "伤害规则掉落.json");
+
+    public void Write()
+    {
+        string json = JsonConvert.SerializeObject(this, Formatting.Indented);
+        File.WriteAllText(FilePath, json);
+    }
+
+    public static Configuration Read()
+    {
+        if (!File.Exists(FilePath))
+        {
+            var NewConfig = new Configuration();
+            new Configuration().Write();
+            return NewConfig;
+        }
+        else
+        {
+            string jsonContent = File.ReadAllText(FilePath);
+            return JsonConvert.DeserializeObject<Configuration>(jsonContent)!;
+        }
+    }
+    #endregion
 }

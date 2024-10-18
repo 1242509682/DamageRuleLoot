@@ -1,3 +1,3 @@
-copy bin\Release\net6.0\DamageRuleLoot.dll C:\Users\羽学\Desktop\Beta\ServerPlugins
+copy bin\Debug\net6.0\DamageRuleLoot.dll C:\Users\羽学\Desktop\Beta\ServerPlugins
 del C:\Users\羽学\Desktop\Beta\tshock\伤害规则掉落.json
 taskkill /F /IM TShock.Server.exe
