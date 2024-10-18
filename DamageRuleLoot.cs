@@ -28,14 +28,17 @@ public class DamageRuleLoot : TerrariaPlugin
         this._reloadHandler = (_) => LoadConfig();
         GeneralHooks.ReloadEvent += this._reloadHandler;
         ServerApi.Hooks.NpcKilled.Register(this, this.OnNpcKill);
+        ServerApi.Hooks.NpcKilled.Register(this, this.OnMechQueen);
         On.Terraria.NPC.StrikeNPC += OnStrikeNPC;
     }
+
     protected override void Dispose(bool disposing)
     {
         if (disposing)
         {
             GeneralHooks.ReloadEvent -= this._reloadHandler;
             ServerApi.Hooks.NpcKilled.Deregister(this, this.OnNpcKill);
+            ServerApi.Hooks.NpcKilled.Deregister(this, this.OnMechQueen);
             On.Terraria.NPC.StrikeNPC -= OnStrikeNPC;
         }
         base.Dispose(disposing);
@@ -55,8 +58,7 @@ public class DamageRuleLoot : TerrariaPlugin
     #region 伤怪建表法+暴击计数法
     private double OnStrikeNPC(On.Terraria.NPC.orig_StrikeNPC orig, NPC self, int Damage, float knockBack, int hitDirection, bool crit, bool noEffect, bool fromNet, Entity entity)
     {
-        var NotUsed = orig(self, Damage, knockBack, hitDirection, crit, noEffect, fromNet, entity);
-
+        var damage = orig(self, Damage, knockBack, hitDirection, crit, noEffect, fromNet, entity);
         StrikeNPC? strike = StrikeNPC.strikeNPC.Find(x => x.npcIndex == self.whoAmI && x.npcID == self.netID);
 
         if (fromNet && entity is Player plr)
@@ -74,7 +76,7 @@ public class DamageRuleLoot : TerrariaPlugin
                         {
                             TShock.Utils.Broadcast($"[c/FBF069:【暴击】] 玩家:[c/F06576:{plr.name}] " +
                                 $"对象:[c/AEA3E4:{self.FullName}] 满血:[c/FBF069:{self.lifeMax}] " +
-                                $"血量:[c/6DDA6D:{self.life}] 伤害:[c/F06576:{strike.AllDamage}] " +
+                                $"血量:[c/6DDA6D:{self.life}] 伤害:[c/F06576:{damage}] " +
                                 $"暴击数:[c/FBF069:{CritTracker.GetCritCount(plr.name)}]", 202, 221, 222);
                         }
 
@@ -102,7 +104,7 @@ public class DamageRuleLoot : TerrariaPlugin
                 StrikeNPC.strikeNPC.Add(snpc);
             }
         }
-        return NotUsed;
+        return damage;
     }
     #endregion
 
@@ -120,6 +122,8 @@ public class DamageRuleLoot : TerrariaPlugin
         //毁灭者的处理
         if (args.npc.netID == 134)
         {
+            if (Main.zenithWorld && Config.MechQueen) return;
+
             foreach (var sss in strikeNPC)
             {
                 if (sss.npcID == 134 || sss.npcID == 135 || sss.npcID == 136)
@@ -164,6 +168,8 @@ public class DamageRuleLoot : TerrariaPlugin
         // 双子魔眼
         else if (args.npc.netID == 125 || args.npc.netID == 126)
         {
+            if (Main.zenithWorld && Config.MechQueen) return;
+
             foreach (var sss in strikeNPC)
             {
                 if ((args.npc.netID == 125 && (sss.npcID == 125 || sss.npcID == 126)) || (args.npc.netID == 126 && (sss.npcID == 125 || sss.npcID == 126)))
@@ -373,6 +379,8 @@ public class DamageRuleLoot : TerrariaPlugin
                     case 130:
                     case 131:
                         {
+                            if (Main.zenithWorld && Config.MechQueen) return;
+
                             StrikeNPC? strike2 = strikeNPC.Find(x => x.npcID == 127);
                             if (strike2 == null)
                             {
@@ -568,6 +576,12 @@ public class DamageRuleLoot : TerrariaPlugin
                         break;
                     default:
                         {
+
+                            if (Main.zenithWorld && Config.MechQueen &&
+                                args.npc.netID == 125 || args.npc.netID == 126 || args.npc.netID == 134 ||
+                                args.npc.netID == 135 || args.npc.netID == 136 || args.npc.netID == 139)
+                                continue;
+
                             if (args.npc.boss || args.npc.netID == 551 || args.npc.netID == 668 || Config.Expand.Contains(args.npc.FullName))
                             {
                                 SendKillMessage(args.npc.FullName, strikeNPC[i].PlayerOrDamage, strikeNPC[i].AllDamage);
@@ -586,6 +600,106 @@ public class DamageRuleLoot : TerrariaPlugin
             }
         }
     }
+    #endregion
+
+
+    #region 美杜莎
+    public static Dictionary<string, double> MechQueen = new Dictionary<string, double>();
+    private void OnMechQueen(NpcKilledEventArgs args)
+    {
+        if (!Config.Enabled || !Config.MechQueen) return;
+
+        if (NPC.IsMechQueenUp || Main.zenithWorld)
+        {
+            for (int i = 0; i < strikeNPC.Count; i++)
+            {
+                if (strikeNPC[i].npcIndex == args.npc.whoAmI && strikeNPC[i].npcID == args.npc.netID)
+                {
+                    switch (strikeNPC[i].npcID)
+                    {
+                        case 125:
+                        case 126:
+                        case 127:
+                        case 128:
+                        case 129:
+                        case 130:
+                        case 131:
+                        case 134:
+                        case 135:
+                        case 136:
+                        case 139:
+                            {
+                                bool flag = true;
+
+                                foreach (var sss in strikeNPC)
+                                {
+                                    if (sss.npcID == 134 || sss.npcID == 135 || sss.npcID == 136 ||
+                                        sss.npcID == 125 || sss.npcID == 126 || sss.npcID == 127)
+                                    {
+                                        foreach (var ss in strikeNPC[i].PlayerOrDamage)
+                                        {
+                                            UpdateDict(MechQueen, ss.Key, ss.Value);
+                                        }
+                                    }
+                                }
+
+                                foreach (var n in Main.npc)
+                                {
+                                    if (n.whoAmI != args.npc.whoAmI && n.active &&
+                                        (IDGroup(n) || IDGroup2(n) || IDGroup3(n)))
+                                    {
+                                        flag = false;
+                                        break;
+                                    }
+                                }
+
+
+
+                                if (flag)
+                                {
+                                    double num = 0;
+                                    foreach (var Mech in MechQueen)
+                                    {
+                                        num += Mech.Value;
+                                    }
+                                    SendKillMessage("美杜莎", MechQueen, num);
+                                    strikeNPC.RemoveAll(x =>
+                                    x.npcID == 125 || x.npcID == 126 || x.npcID == 127 ||
+                                    x.npcID == 128 || x.npcID == 129 || x.npcID == 130 || x.npcID == 131 ||
+                                    x.npcID == 134 || x.npcID == 135 || x.npcID == 136 || x.npcID == 139 ||
+                                    x.npcID != Main.npc[x.npcIndex].netID || !Main.npc[x.npcIndex].active);
+                                    MechQueen.Clear();
+                                    return;
+                                }
+                            }
+                            break;
+                    }
+                }
+            }
+        }
+    }
+
+    #region 三组击杀美杜莎的可能
+    public static bool IDGroup(NPC nPC)
+    {
+        int[] id = { 125, 126, 127, 134 };
+        return id.Contains(nPC.netID);
+    }
+
+    public static bool IDGroup2(NPC nPC)
+    {
+        int[] id = { 125, 126, 127, 135 };
+        return id.Contains(nPC.netID);
+    }
+
+    public static bool IDGroup3(NPC nPC)
+    {
+        int[] id = { 125, 126, 127, 136 };
+        return id.Contains(nPC.netID);
+    }
+    #endregion
+
+
     #endregion
 
 }

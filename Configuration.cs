@@ -30,7 +30,10 @@ public class Configuration
     [JsonProperty("领取条件/百分比", Order = 6)]
     public double Damages { get; set; }
 
-    [JsonProperty("参与伤害榜的非BOSS怪名称", Order = 7)]
+    [JsonProperty("美杜莎判定", Order = 7)]
+    public bool MechQueen { get; set; } = true;
+
+    [JsonProperty("参与伤害榜的非BOSS怪名称", Order = 8)]
     public string[] Expand { get; set; } = new string[] { "冰雪巨人", "沙尘精", "腐化宝箱怪", "猩红宝箱怪", "神圣宝箱怪", "黑暗魔法师", "食人魔", "哥布林术士", "荷兰飞盗船", "恐惧鹦鹉螺", "血浆哥布林鲨鱼", "血鳗鱼", "海盗船长","火星飞碟" };
 
     public Configuration()
