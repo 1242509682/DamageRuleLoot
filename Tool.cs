@@ -69,7 +69,7 @@ public static class Tool
         StringBuilder LowDamager = new StringBuilder();
         int PlayerCount = TShock.Utils.GetActivePlayerCount();
         int Escape = PlayerCount - PlayerOrDamage.Count;
-        mess.AppendLine($"          [i:3455]《[c/F7686D:伤害排名榜]》[i:3454]");
+        mess.AppendLine($"            [i:3455][c/AD89D5:伤][c/D68ACA:害][c/DF909A:排][c/E5A894:行][c/E5BE94:榜][i:3454]");
         mess.AppendLine($" 当前服务器有 [c/74F3C9:{PlayerCount}位] 玩家 | 未参战: [c/A7DDF0:{Escape}位]");
         mess.AppendLine($" 恭喜以下 [c/74F3C9:{PlayerOrDamage.Count}位] 玩家击败了 [c/F7686D:{BossName}]");
 
@@ -145,7 +145,7 @@ public static class Tool
             string[] playerNames = LowDamager.ToString().Split(new[] { "," }, StringSplitOptions.None);
             string joinedNames = string.Join(", ", playerNames);
 
-            LowDamager.Insert(0, $" 输出少于 [c/A7DDF0:{DamageRuleLoot.Config.Damages:0.00%}] 禁止掉落宝藏袋:\n");
+            LowDamager.Insert(0, $"[c/F06576:【注意】]输出少于 [c/A7DDF0:{DamageRuleLoot.Config.Damages:0.00%}] 禁止掉落宝藏袋:\n");
 
             TSPlayer.All.SendMessage(LowDamager.ToString(), 247, 244, 150);
         }
