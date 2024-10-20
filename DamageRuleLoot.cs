@@ -14,7 +14,7 @@ public class DamageRuleLoot : TerrariaPlugin
     #region 插件信息
     public override string Name => "伤害规则掉落";
     public override string Author => "羽学 西江小子";
-    public override Version Version => new Version(1, 3, 0);
+    public override Version Version => new Version(1, 3, 1);
     public override string Description => "涡轮增压不蒸鸭";
     #endregion
 
@@ -52,6 +52,7 @@ public class DamageRuleLoot : TerrariaPlugin
     private static void LoadConfig()
     {
         Config = Configuration.Read();
+        WriteName();
         Config.Write();
         TShock.Log.ConsoleInfo("[伤害规则掉落]重新加载配置完毕。");
     }
@@ -110,7 +111,6 @@ public class DamageRuleLoot : TerrariaPlugin
         }
         return damage;
     }
-
     #endregion
 
     #region 打怪伤BOSS法
@@ -122,49 +122,11 @@ public class DamageRuleLoot : TerrariaPlugin
             //不是雕像怪
             if (!self.SpawnedFromStatue)
             {
-                //判定为鲨鱼龙
                 if (Config.Sharkron && self.netID == 372 || self.netID == 373)
                 {
                     //获取猪鲨id
                     StrikeNPC? strike = StrikeNPC.strikeNPC.Find(x => x.npcID == 370);
-                    if (strike != null)
-                    {
-                        if (Damage > 0 && Main.npc[strike.npcIndex].life > 20000)
-                        {
-                            //猪鲨还活着
-                            if (Main.npc[strike.npcIndex].active)
-                            {
-                                //对鲨鱼龙造成的伤害减到猪鲨身上，然后更新
-                                Main.npc[strike.npcIndex].life -= Damage;
-                                Main.npc[strike.npcIndex].netUpdate = true;
-
-                                // 更新猪鲨的伤害记录
-                                if (strike.PlayerOrDamage.ContainsKey(plr.name))
-                                {
-                                    strike.PlayerOrDamage[plr.name] += Damage;
-                                    strike.AllDamage += Damage;
-                                }
-                            }
-
-                            if (Config.TransferInfo)
-                            {
-                                if (Main.npc[strike.npcIndex].life > 20000)
-                                {
-                                    TShock.Utils.Broadcast($"[c/FBF069:【转移】] 玩家:[c/F06576:{plr.name}] " +
-                                        $"攻击对象:[c/AEA3E4:{self.FullName}] | " +
-                                        $"转移:[c/6DDA6D:{strike.npcName}] 伤害:[c/F06576:{Damage}] " +
-                                        $"生命:[c/FBF069:{Main.npc[strike.npcIndex].life}]", 202, 221, 222);
-                                }
-
-                                if (Main.npc[strike.npcIndex].life <= 20000)
-                                {
-                                    TShock.Utils.Broadcast($"[c/F06576:【停转】] 玩家:[c/F06576:{plr.name}] " +
-                                        $"转伤对象:[c/AEA3E4:{strike.npcName}] | 生命值:[c/6DDA6D:{Main.npc[strike.npcIndex].life}] < " +
-                                        $"[c/F06576:{20000}]", 202, 221, 222);
-                                }
-                            }
-                        }
-                    }
+                    General(self, Damage, plr, strike, 20000f);
                 }
 
                 //判定为FTW和天顶世界的火焰小鬼与饿鬼
@@ -173,90 +135,16 @@ public class DamageRuleLoot : TerrariaPlugin
                 {
                     //获取肉山id
                     StrikeNPC? strike = StrikeNPC.strikeNPC.Find(x => x.npcID == 113);
-                    if (strike != null)
-                    {
-                        if (Damage > 0 && Main.npc[strike.npcIndex].life > 1000)
-                        {
-                            if (Main.npc[strike.npcIndex].active)
-                            {
-                                //对小鬼和饿鬼造成的伤害减到肉山身上，然后更新
-                                Main.npc[strike.npcIndex].life -= Damage;
-                                Main.npc[strike.npcIndex].netUpdate = true;
-
-                                // 更新肉山的伤害记录
-                                if (strike.PlayerOrDamage.ContainsKey(plr.name))
-                                {
-                                    strike.PlayerOrDamage[plr.name] += Damage;
-                                    strike.AllDamage += Damage;
-                                }
-                            }
-
-                            if (Config.TransferInfo)
-                            {
-                                if (Main.npc[strike.npcIndex].life > 1000)
-                                {
-                                    TShock.Utils.Broadcast($"[c/FBF069:【转移】] 玩家:[c/F06576:{plr.name}] " +
-                                        $"攻击对象:[c/AEA3E4:{self.FullName}] | " +
-                                        $"转移:[c/6DDA6D:{strike.npcName}] 伤害:[c/F06576:{Damage}] " +
-                                        $"生命:[c/FBF069:{Main.npc[strike.npcIndex].life}]", 202, 221, 222);
-                                }
-
-                                if (Main.npc[strike.npcIndex].life <= 1000)
-                                {
-                                    TShock.Utils.Broadcast($"[c/F06576:【停转】] 玩家:[c/F06576:{plr.name}] " +
-                                        $"转伤对象:[c/AEA3E4:{strike.npcName}] | 生命值:[c/6DDA6D:{Main.npc[strike.npcIndex].life}] < " +
-                                        $"[c/F06576:{1000}]", 202, 221, 222);
-                                }
-                            }
-                        }
-                    }
+                    General(self, Damage, plr, strike, 3000f);
                 }
 
                 //判定为机械骷髅王四肢
-                if (Config.Prime &&
-                    self.netID == 128 || self.netID == 129 ||
+                if (Config.Prime && self.netID == 128 || self.netID == 129 ||
                     self.netID == 130 || self.netID == 131)
                 {
-                    //获取机械骷髅王头部id
+                    //获取机械骷髅王id
                     StrikeNPC? strike = StrikeNPC.strikeNPC.Find(x => x.npcID == 127);
-                    if (strike != null)
-                    {
-                        //设置一个转移伤害的生命条件上限，防止虚标伤害把NPC直接抹除，不掉任何东西
-                        if (Damage > 0 && Main.npc[strike.npcIndex].life > 1000)
-                        {
-                            if (Main.npc[strike.npcIndex].active)
-                            {
-                                //对四肢造成的伤害减到头部上，然后更新
-                                Main.npc[strike.npcIndex].life -= Damage;
-                                Main.npc[strike.npcIndex].netUpdate = true;
-
-                                // 更新机械骷髅王头部的伤害记录
-                                if (strike.PlayerOrDamage.ContainsKey(plr.name))
-                                {
-                                    strike.PlayerOrDamage[plr.name] += Damage;
-                                    strike.AllDamage += Damage;
-                                }
-                            }
-
-                            if (Config.TransferInfo)
-                            {
-                                if (Main.npc[strike.npcIndex].life > 1000)
-                                {
-                                    TShock.Utils.Broadcast($"[c/FBF069:【转移】] 玩家:[c/F06576:{plr.name}] " +
-                                        $"攻击对象:[c/AEA3E4:{self.FullName}] | " +
-                                        $"转移:[c/6DDA6D:{strike.npcName}] 伤害:[c/F06576:{Damage}] " +
-                                        $"生命:[c/FBF069:{Main.npc[strike.npcIndex].life}]", 202, 221, 222);
-                                }
-
-                                if (Main.npc[strike.npcIndex].life <= 1000)
-                                {
-                                    TShock.Utils.Broadcast($"[c/F06576:【停转】] 玩家:[c/F06576:{plr.name}] " +
-                                        $"转伤对象:[c/AEA3E4:{strike.npcName}] | 生命值:[c/6DDA6D:{Main.npc[strike.npcIndex].life}] < " +
-                                        $"[c/F06576:{1000}]", 202, 221, 222);
-                                }
-                            }
-                        }
-                    }
+                    General(self, Damage, plr, strike, 5000f);
                 }
 
                 //判定自定义
@@ -275,40 +163,20 @@ public class DamageRuleLoot : TerrariaPlugin
                                     continue;
                                 }
 
-                                // 根据配置项判断是否需要暴击才能转移伤害
-                                bool cr = Custom.Crit || (!Custom.Crit && !crit);
-
-                                if (Damage > 0 && Main.npc[strike.npcIndex].life > Custom.LifeLimit && cr)
+                                if (Custom.Crit)
                                 {
-                                    if (Main.npc[strike.npcIndex].active)
+                                    if (Damage >= Custom.Damage && Damage <= Custom.Damage2
+                                        && Main.npc[strike.npcIndex].life > Custom.LifeLimit)
                                     {
-                                        Main.npc[strike.npcIndex].life -= Damage;
-                                        Main.npc[strike.npcIndex].netUpdate = true;
-
-                                        if (strike.PlayerOrDamage.ContainsKey(plr.name))
-                                        {
-                                            strike.PlayerOrDamage[plr.name] += Damage;
-                                            strike.AllDamage += Damage;
-                                        }
-
+                                        TransformDamage(self, Damage, plr, Custom, strike);
                                     }
-
-                                    if (Config.TransferInfo)
+                                }
+                                else
+                                {
+                                    if (Damage >= Custom.Damage && Damage <= Custom.Damage2
+                                        && Main.npc[strike.npcIndex].life > Custom.LifeLimit && !crit)
                                     {
-                                        if (Main.npc[strike.npcIndex].life > Custom.LifeLimit)
-                                        {
-                                            TShock.Utils.Broadcast($"[c/FBF069:【转移】] 玩家:[c/F06576:{plr.name}] " +
-                                                $"攻击对象:[c/AEA3E4:{self.FullName}] | " +
-                                                $"转移:[c/6DDA6D:{strike.npcName}] 伤害:[c/F06576:{Damage}] " +
-                                                $"生命:[c/FBF069:{Main.npc[strike.npcIndex].life}]", 202, 221, 222);
-                                        }
-
-                                        if (Main.npc[strike.npcIndex].life <= Custom.LifeLimit)
-                                        {
-                                            TShock.Utils.Broadcast($"[c/F06576:【停转】] 玩家:[c/F06576:{plr.name}] " +
-                                                $"转伤对象:[c/AEA3E4:{strike.npcName}] | 生命值:[c/6DDA6D:{Main.npc[strike.npcIndex].life}] < " +
-                                                $"[c/F06576:{Custom.LifeLimit}] ", 202, 221, 222);
-                                        }
+                                        TransformDamage(self, Damage, plr, Custom, strike);
                                     }
                                 }
                             }
@@ -328,7 +196,7 @@ public class DamageRuleLoot : TerrariaPlugin
     public static Dictionary<string, double> Eaterworld = new Dictionary<string, double>(); //世吞
     public static Dictionary<string, double> Retinazer = new Dictionary<string, double>(); // 激光眼
     public static Dictionary<string, double> Spazmatism = new Dictionary<string, double>(); // 魔焰眼
-    public static Dictionary<string, double> CustomDicts = new Dictionary<string, double>(); // 自定义
+    public static Dictionary<string, double> CustomDicts = new Dictionary<string, double>(); // 自定义转伤BOSS
     private void OnNpcKill(NpcKilledEventArgs args)
     {
         StrikeNPC strike = StrikeNPC.strikeNPC.Find(x => x.npcIndex == args.npc.whoAmI && x.npcID == args.npc.netID)!;
@@ -340,35 +208,43 @@ public class DamageRuleLoot : TerrariaPlugin
         {
             foreach (var Custom in Config.TList)
             {
-                if (args.npc.netID != Custom.NPCA)
+                StrikeNPC? boss = StrikeNPC.strikeNPC.Find(x => x.npcID == Custom.NPCA);
+
+                if (args.npc.netID != Custom.NPCA || boss == null)
                 {
                     continue;
                 }
 
-                foreach (int B in Custom.NPCB)
+                foreach (var sss in strikeNPC)
                 {
-                    foreach (var sss in strikeNPC)
+                    if (sss.npcID == Custom.NPCA)
                     {
-                        if (sss.npcID == Custom.NPCA || sss.npcID == B)
+                        foreach (var ss in boss.PlayerOrDamage)
                         {
-                            foreach (var ss in strike.PlayerOrDamage)
-                            {
-                                UpdateDict(CustomDicts, ss.Key, ss.Value);
-                            }
+                            UpdateDict(CustomDicts, ss.Key, ss.Value);
+                        }
+                    }
+
+                    if (Custom.SettlementDamage)
+                    {
+                        foreach (int B in Custom.NPCB)
+                        {
+                            if (sss.npcID == B)
+                                foreach (var ss in boss.PlayerOrDamage)
+                                    UpdateDict(CustomDicts, ss.Key, ss.Value);
                         }
                     }
                 }
 
-                double sum = 0;
-                foreach (var d in CustomDicts)
+                double num = CustomDicts.Values.Sum();
+
+                if (Custom.Mess)
                 {
-                    sum += d.Value;
+                    SendKillMessage(args.npc.FullName, CustomDicts, num);
                 }
 
-                SendKillMessage(args.npc.FullName, CustomDicts, sum);
                 strikeNPC.RemoveAll(x => x.npcID == Custom.NPCA || Custom.NPCB.Contains(x.npcID) || x.npcID != Main.npc[x.npcIndex].netID || !Main.npc[x.npcIndex].active);
                 CustomDicts.Clear();
-
                 return;
             }
         }
@@ -386,11 +262,8 @@ public class DamageRuleLoot : TerrariaPlugin
                         UpdateDict(Destroyer, ss.Key, ss.Value);
                 }
             }
-            double sum = 0;
-            foreach (var des in Destroyer)
-            {
-                sum += des.Value;
-            }
+
+            double sum = Destroyer.Values.Sum();
             SendKillMessage(args.npc.FullName, Destroyer, sum);
             Destroyer.Clear();
             strikeNPC.RemoveAll(x => x.npcID == 134 || x.npcID == 136 || x.npcID == 135 ||
@@ -410,18 +283,14 @@ public class DamageRuleLoot : TerrariaPlugin
                 }
 
                 //如果是For the worthy或天顶种子，把小鬼和饿鬼的伤害加算到肉山身上（并排除雕像怪）
-                else if (Config.FireImp && (Main.getGoodWorld || Main.zenithWorld) && !args.npc.SpawnedFromStatue &&
-                    (sss.npcID == 24 || sss.npcID == 115 || sss.npcID == 116))
+                else if (Config.FireImp && (Main.getGoodWorld || Main.zenithWorld) &&
+                    !args.npc.SpawnedFromStatue && (sss.npcID == 24 || sss.npcID == 115 || sss.npcID == 116))
                 {
                     foreach (var ss in sss.PlayerOrDamage)
                         UpdateDict(FleshWall, ss.Key, ss.Value);
                 }
             }
-            double sum = 0;
-            foreach (var fw in FleshWall)
-            {
-                sum += fw.Value;
-            }
+            double sum = FleshWall.Values.Sum();
             SendKillMessage("血肉墙", FleshWall, sum);
             FleshWall.Clear();
             strikeNPC.RemoveAll(x => x.npcID == 113 || x.npcID == 114 ||
@@ -451,12 +320,9 @@ public class DamageRuleLoot : TerrariaPlugin
                 }
             }
 
-            if ((args.npc.netID == 125 && Spazmatism.Count > 0) ||
-                (args.npc.netID == 126 && Retinazer.Count > 0))
+            if ((args.npc.netID == 125 && Spazmatism.Count > 0) || (args.npc.netID == 126 && Retinazer.Count > 0))
             {
                 SendKillMessage("双子魔眼", CombineDamages(Retinazer, Spazmatism), GetCombineDamages(CombineDamages(Retinazer, Spazmatism)));
-
-
                 ClearDictionaries(Retinazer, Spazmatism);
             }
             strikeNPC.RemoveAll(x => x.npcID == 125 || x.npcID == 126 ||
@@ -494,11 +360,7 @@ public class DamageRuleLoot : TerrariaPlugin
 
                             if (flag)
                             {
-                                double sum = 0;
-                                foreach (var eater in Eaterworld)
-                                {
-                                    sum += eater.Value;
-                                }
+                                double sum = Eaterworld.Values.Sum();
                                 SendKillMessage(args.npc.FullName, Eaterworld, sum);
                                 strikeNPC.RemoveAll(x => x.npcID == 13 || x.npcID == 14 || x.npcID == 15 ||
                                 x.npcID != Main.npc[x.npcIndex].netID || !Main.npc[x.npcIndex].active);
@@ -512,42 +374,8 @@ public class DamageRuleLoot : TerrariaPlugin
                     case 492:
                         {
                             bool flag = true;
-                            int index = -1;
-                            foreach (var n in Main.npc)
-                            {
-                                if (n.whoAmI != args.npc.whoAmI && n.type == 492 && n.active)
-                                {
-                                    flag = false;
-                                }
-                                if (n.netID == 491)
-                                {
-                                    index = n.whoAmI;
-                                }
-                            }
-                            if (index >= 0)
-                            {
-                                StrikeNPC? st = strikeNPC.Find(x => x.npcID == 491);
-                                if (st == null)
-                                {
-                                    strikeNPC.Add(new StrikeNPC(index, 491, Lang.GetNPCNameValue(491), strikeNPC[i].PlayerOrDamage, strikeNPC[i].AllDamage, 80000f));
-                                }
-                                else
-                                {
-                                    foreach (var y in strikeNPC[i].PlayerOrDamage)
-                                    {
-                                        if (st.PlayerOrDamage.ContainsKey(y.Key))
-                                        {
-                                            st.PlayerOrDamage[y.Key] += y.Value;
-                                            st.AllDamage += y.Value;
-                                        }
-                                        else
-                                        {
-                                            st.PlayerOrDamage.Add(y.Key, y.Value);
-                                            st.AllDamage += y.Value;
-                                        }
-                                    }
-                                }
-                            }
+                            flag = CombDmg(args, i, flag, 491, new int[] { 492 }, 80000f);
+
                             if (flag)
                             {
                                 StrikeNPC? airship = strikeNPC.Find(x => x.npcID == 491);
@@ -572,42 +400,8 @@ public class DamageRuleLoot : TerrariaPlugin
                     case 395:
                         {
                             StrikeNPC? strike2 = strikeNPC.Find(x => x.npcID == 395);
-                            if (strike2 == null)
-                            {
-                                int index = -1;
-                                foreach (var n in Main.npc)
-                                {
-                                    if (n.netID == 395)
-                                    {
-                                        index = n.whoAmI;
-                                    }
-                                }
-                                if (index == -1)
-                                {
-                                    strikeNPC.RemoveAll(x => x.npcID == 392 || x.npcID == 393 || x.npcID == 394
-                                    || x.npcID == 395 || x.npcID != Main.npc[x.npcIndex].netID || !Main.npc[x.npcIndex].active);
-                                    return;
-                                }
-                                strike2 = new StrikeNPC(index, 395, Main.npc[index].FullName, strikeNPC[i].PlayerOrDamage, strikeNPC[i].AllDamage, 81000);
-                                strikeNPC.Add(strike2);
-                            }
-                            //把炮塔受伤计算加入到本体核心中
-                            else if (strikeNPC[i].npcID != 395)
-                            {
-                                foreach (var v in strikeNPC[i].PlayerOrDamage)
-                                {
-                                    if (strike2.PlayerOrDamage.ContainsKey(v.Key))
-                                    {
-                                        strike2.PlayerOrDamage[v.Key] += v.Value;
-                                        strike2.AllDamage += v.Value;
-                                    }
-                                    else
-                                    {
-                                        strike2.PlayerOrDamage.Add(v.Key, v.Value);
-                                        strike2.AllDamage += v.Value;
-                                    }
-                                }
-                            }
+                            CombDmg2(i, ref strike2, 395, new int[] { 392, 393, 394 }, 81000f);
+
                             if (strikeNPC[i].npcID == 395)
                             {
                                 SendKillMessage("火星飞碟", strikeNPC[i].PlayerOrDamage, strikeNPC[i].AllDamage);
@@ -626,42 +420,7 @@ public class DamageRuleLoot : TerrariaPlugin
                             if (!Config.Sharkron) return;
 
                             StrikeNPC? strike2 = strikeNPC.Find(x => x.npcID == 370);
-                            if (strike2 == null)
-                            {
-                                int index = -1;
-                                foreach (var n in Main.npc)
-                                {
-                                    if (n.netID == 370)
-                                    {
-                                        index = n.whoAmI;
-                                    }
-                                }
-                                if (index == -1)
-                                {
-                                    strikeNPC.RemoveAll(x => x.npcID == 370 || x.npcID == 372 || x.npcID == 373 ||
-                                    x.npcID != Main.npc[x.npcIndex].netID || !Main.npc[x.npcIndex].active);
-                                    return;
-                                }
-                                strike2 = new StrikeNPC(index, 370, Main.npc[index].FullName, strikeNPC[i].PlayerOrDamage, strikeNPC[i].AllDamage, 81000);
-                                strikeNPC.Add(strike2);
-                            }
-                            //把鲨鱼龙受伤计算加入到猪鲨本体中
-                            else if (strikeNPC[i].npcID != 370)
-                            {
-                                foreach (var v in strikeNPC[i].PlayerOrDamage)
-                                {
-                                    if (strike2.PlayerOrDamage.ContainsKey(v.Key))
-                                    {
-                                        strike2.PlayerOrDamage[v.Key] += v.Value;
-                                        strike2.AllDamage += v.Value;
-                                    }
-                                    else
-                                    {
-                                        strike2.PlayerOrDamage.Add(v.Key, v.Value);
-                                        strike2.AllDamage += v.Value;
-                                    }
-                                }
-                            }
+                            CombDmg2(i, ref strike2, 370, new int[] { 372, 373 }, 10000f);
                             if (strikeNPC[i].npcID == 370)
                             {
                                 SendKillMessage("猪龙鱼公爵", strikeNPC[i].PlayerOrDamage, strikeNPC[i].AllDamage);
@@ -711,43 +470,7 @@ public class DamageRuleLoot : TerrariaPlugin
                             if (Main.zenithWorld && Config.MechQueen) return;
 
                             StrikeNPC? strike2 = strikeNPC.Find(x => x.npcID == 127);
-                            if (strike2 == null)
-                            {
-                                int index = -1;
-                                foreach (var n in Main.npc)
-                                {
-                                    if (n.netID == 127)
-                                    {
-                                        index = n.whoAmI;
-                                    }
-                                }
-                                if (index == -1)
-                                {
-                                    strikeNPC.RemoveAll(x => x.npcID == 127 || x.npcID == 128 || x.npcID == 129 ||
-                                    x.npcID == 130 || x.npcID == 131 || x.npcID != Main.npc[x.npcIndex].netID || !Main.npc[x.npcIndex].active);
-                                    return;
-                                }
-                                strike2 = new StrikeNPC(index, 127, Main.npc[index].FullName, strikeNPC[i].PlayerOrDamage, strikeNPC[i].AllDamage, 300000);
-                                strikeNPC.Add(strike2);
-                            }
-                            //把肢体受伤计算加入到本体头部中
-                            else if (strikeNPC[i].npcID != 127)
-                            {
-                                if (!Config.Prime) return;
-                                foreach (var v in strikeNPC[i].PlayerOrDamage)
-                                {
-                                    if (strike2.PlayerOrDamage.ContainsKey(v.Key))
-                                    {
-                                        strike2.PlayerOrDamage[v.Key] += v.Value;
-                                        strike2.AllDamage += v.Value;
-                                    }
-                                    else
-                                    {
-                                        strike2.PlayerOrDamage.Add(v.Key, v.Value);
-                                        strike2.AllDamage += v.Value;
-                                    }
-                                }
-                            }
+                            CombDmg3(i, ref strike2, 127, new int[] { 128, 129, 130, 131 }, 300000f);
                             if (strikeNPC[i].npcID == 127)
                             {
                                 SendKillMessage(args.npc.FullName, strikeNPC[i].PlayerOrDamage, strikeNPC[i].AllDamage);
@@ -758,47 +481,12 @@ public class DamageRuleLoot : TerrariaPlugin
                         }
                         break;
 
-                    //骷髅王的处理
+                    //骷髅王的处理 把肢体受伤计算加入到本体头部中
                     case 35:
                     case 36:
                         {
-                            StrikeNPC? strike5 = strikeNPC.Find(x => x.npcID == 35);
-                            if (strike5 == null)
-                            {
-                                int index = -1;
-                                foreach (var n in Main.npc)
-                                {
-                                    if (n.netID == 35)
-                                    {
-                                        index = n.whoAmI;
-                                    }
-                                }
-                                if (index == -1)
-                                {
-                                    strikeNPC.RemoveAll(x => x.npcID == 35 || x.npcID == 36 ||
-                                    x.npcID != Main.npc[x.npcIndex].netID || !Main.npc[x.npcIndex].active);
-                                    return;
-                                }
-                                strike5 = new StrikeNPC(index, 35, Main.npc[index].FullName, strikeNPC[i].PlayerOrDamage, strikeNPC[i].AllDamage, 16000);
-                                strikeNPC.Add(strike5);
-                            }
-                            //把肢体受伤计算加入到本体头部中
-                            else if (strikeNPC[i].npcID != 35)
-                            {
-                                foreach (var v in strikeNPC[i].PlayerOrDamage)
-                                {
-                                    if (strike5.PlayerOrDamage.ContainsKey(v.Key))
-                                    {
-                                        strike5.PlayerOrDamage[v.Key] += v.Value;
-                                        strike5.AllDamage += v.Value;
-                                    }
-                                    else
-                                    {
-                                        strike5.PlayerOrDamage.Add(v.Key, v.Value);
-                                        strike5.AllDamage += v.Value;
-                                    }
-                                }
-                            }
+                            StrikeNPC? strike2 = strikeNPC.Find(x => x.npcID == 35);
+                            CombDmg2(i, ref strike2, 35, new int[] { 36 }, 16000f);
                             if (strikeNPC[i].npcID == 35)
                             {
                                 SendKillMessage(args.npc.FullName, strikeNPC[i].PlayerOrDamage, strikeNPC[i].AllDamage);
@@ -809,56 +497,14 @@ public class DamageRuleLoot : TerrariaPlugin
                         }
                         break;
 
-                    //石巨人的特殊处理
+                    //石巨人的特殊处理 本体以外的肢体的伤害计算加到本体上
                     case 245:
                     case 246:
                     case 247:
                     case 248:
                         {
-                            bool G246 = Config.GolemHead;
-
-                            StrikeNPC? strike3 = strikeNPC.Find(x => x.npcID == 245);
-                            if (strike3 == null)
-                            {
-                                int index = -1;
-                                foreach (var n in Main.npc)
-                                {
-                                    if (n.netID == 245)
-                                    {
-                                        index = n.whoAmI;
-                                    }
-                                }
-                                if (index == -1)
-                                {
-                                    strikeNPC.RemoveAll(x => x.npcID == 245 || x.npcID == 246 || x.npcID == 247 ||
-                                    x.npcID == 248 || x.npcID != Main.npc[x.npcIndex].netID || !Main.npc[x.npcIndex].active);
-                                    return;
-                                }
-                                strike3 = new StrikeNPC(index, 245, Main.npc[index].FullName, strikeNPC[i].PlayerOrDamage, strikeNPC[i].AllDamage, 400000);
-                                strikeNPC.Add(strike3);
-                            }
-                            //把除了本体以外的肢体的伤害计算加到本体上
-                            else if (strikeNPC[i].npcID != 245)
-                            {
-                                //开启配置开关则忽略头部的血量计算
-                                if (G246 || strikeNPC[i].npcID != 246)
-                                {
-                                    foreach (var v in strikeNPC[i].PlayerOrDamage)
-                                    {
-                                        if (strike3.PlayerOrDamage.ContainsKey(v.Key))
-                                        {
-                                            strike3.PlayerOrDamage[v.Key] += v.Value;
-                                            strike3.AllDamage += v.Value;
-                                        }
-                                        else
-                                        {
-                                            strike3.PlayerOrDamage.Add(v.Key, v.Value);
-                                            strike3.AllDamage += v.Value;
-                                        }
-                                    }
-                                }
-                            }
-
+                            StrikeNPC? strike2 = strikeNPC.Find(x => x.npcID == 245);
+                            CombDmg2(i, ref strike2, 245, new int[] { 246, 247, 248 }, 120000f);
                             if (strikeNPC[i].npcID == 245)
                             {
                                 SendKillMessage(args.npc.FullName, strikeNPC[i].PlayerOrDamage, strikeNPC[i].AllDamage);
@@ -873,43 +519,8 @@ public class DamageRuleLoot : TerrariaPlugin
                     case 266:
                     case 267:
                         {
-                            StrikeNPC? strike4 = strikeNPC.Find(x => x.npcID == 266);
-                            if (strike4 == null)
-                            {
-                                int index = -1;
-                                foreach (var n in Main.npc)
-                                {
-                                    if (n.netID == 266)
-                                    {
-                                        index = n.whoAmI;
-                                    }
-                                }
-                                if (index == -1)//不可能发生这种情况
-                                {
-                                    strikeNPC.RemoveAll(x => x.npcID == 266 || x.npcID == 267 ||
-                                    x.npcID != Main.npc[x.npcIndex].netID || !Main.npc[x.npcIndex].active);
-                                    return;
-                                }
-                                strike4 = new StrikeNPC(index, 266, Main.npc[index].FullName, strikeNPC[i].PlayerOrDamage, strikeNPC[i].AllDamage, 125000);
-                                strikeNPC.Add(strike4);
-                            }
-                            //把除了本体以外的飞眼怪的伤害计算加到本体上
-                            else if (strikeNPC[i].npcID != 266)
-                            {
-                                foreach (var v in strikeNPC[i].PlayerOrDamage)
-                                {
-                                    if (strike4.PlayerOrDamage.ContainsKey(v.Key))
-                                    {
-                                        strike4.PlayerOrDamage[v.Key] += v.Value;
-                                        strike4.AllDamage += v.Value;
-                                    }
-                                    else
-                                    {
-                                        strike4.PlayerOrDamage.Add(v.Key, v.Value);
-                                        strike4.AllDamage += v.Value;
-                                    }
-                                }
-                            }
+                            StrikeNPC? strike2 = strikeNPC.Find(x => x.npcID == 266);
+                            CombDmg2(i, ref strike2, 266, new int[] { 267 }, 125000f);
                             if (strikeNPC[i].npcID == 266)
                             {
                                 SendKillMessage(args.npc.FullName, strikeNPC[i].PlayerOrDamage, strikeNPC[i].AllDamage);
@@ -1018,14 +629,12 @@ public class DamageRuleLoot : TerrariaPlugin
         }
     }
 
-    #region 美杜莎的主体
+    //美杜莎构成ID
     public static bool IDGroup(NPC nPC)
     {
         int[] id = { 125, 126, 127, 134 };
         return id.Contains(nPC.netID);
     }
-    #endregion
-
 
     #endregion
 

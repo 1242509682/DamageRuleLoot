@@ -31,9 +31,6 @@ public class Configuration
     [JsonProperty("天顶新三王统计为美杜莎伤害榜", Order = 6)]
     public bool MechQueen { get; set; } = true;
 
-    [JsonProperty("忽略计算石巨人头部输出榜伤害", Order = 7)]
-    public bool GolemHead { get; set; } = false;
-
     [JsonProperty("攻击机械吴克四肢造成真实伤害", Order = 8)]
     public bool Prime { get; set; } = true;
 
@@ -79,24 +76,43 @@ public class Configuration
     #region 数据结构
     public class ItemData
     {
-        [JsonProperty("输出怪物", Order = 0)]
+        [JsonProperty("怪物名称", Order = -1)]
+        public string Name { get; set; }
+
+        [JsonProperty("受伤怪物", Order = 0)]
         public int NPCA { get; set; }
 
-        [JsonProperty("生命停转", Order = 1)]
+        [JsonProperty("停转血量", Order = 1)]
         public int LifeLimit { get; set; }
 
-        [JsonProperty("涵盖暴击", Order = 2)]
+        [JsonProperty("最低转伤", Order = 2)]
+        public int Damage { get; set; }
+
+        [JsonProperty("最高转伤", Order = 3)]
+        public int Damage2 { get; set; }
+
+        [JsonProperty("涵盖暴击", Order = 4)]
         public bool Crit { get; set; }
 
-        [JsonProperty("输入怪物", Order = 3)]
+        [JsonProperty("播报排名", Order = 5)]
+        public bool Mess { get; set; }
+
+        [JsonProperty("伤值进榜", Order = 6)]
+        public bool SettlementDamage { get; set; }
+
+        [JsonProperty("转伤怪物", Order = 10)]
         public int[] NPCB { get; set; }
 
-
-        public ItemData(int npcA, bool crit,int life, int[] npcB)
+        public ItemData(string name,int npcA,int damage,int damage2, bool crit,bool settlementDamage,int life , bool mess ,int[] npcB)
         {
+            Name = name ?? "";
             NPCA = npcA != 0 ? npcA : 4;
+            Damage = damage != 0 ? damage:1;
+            Damage2 = damage2 != 0 ? damage2:500;
             Crit = crit ? crit : false;
+            SettlementDamage = settlementDamage;
             LifeLimit = life != 0 ? life : 1000;
+            Mess = mess ;
             NPCB = npcB ?? new int[] { 5 };
         }
     }
@@ -106,9 +122,9 @@ public class Configuration
     {
         TList = new List<ItemData>
         {
-            new ItemData(4,false, 600, new int[]{ 5 }),
-            new ItemData(50,false, 800, new int[]{ 1,535 }),
-            new ItemData(262, true, 10000, new int[]{ 264 })
+            new ItemData("",4,0,200,false,true, 600, true,new int[]{ 5 }),
+            new ItemData("", 50, 0, 200, false, true, 800, true,new int[] { 535 }),
+            new ItemData("", 262, 0, 1000, true, true, 10000,true, new int[] { 264 })
         };
     }
     #endregion
